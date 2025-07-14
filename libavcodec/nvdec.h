@@ -41,22 +41,30 @@
     ((major) < 8 || ((major) == 8 && (minor) <= 0))
 #endif
 
+// SDK 13.0 compile time feature checks
+#if NVDECAPI_CHECK_VERSION(13, 0)
+#define NVDEC_HAVE_422_SUPPORT
+#endif
+
 typedef struct NVDECFrame {
     unsigned int idx;
-    AVBufferRef *idx_ref;
-    AVBufferRef *decoder_ref;
+    unsigned int ref_idx;
+    unsigned int *idx_ref;         ///< RefStruct reference
+    unsigned int *ref_idx_ref;     ///< RefStruct reference
+    struct NVDECDecoder  *decoder; ///< RefStruct reference
 } NVDECFrame;
 
 typedef struct NVDECContext {
     CUVIDPICPARAMS pic_params;
 
-    AVBufferPool *decoder_pool;
+    struct AVRefStructPool *decoder_pool;
 
-    AVBufferRef  *decoder_ref;
+    struct NVDECDecoder  *decoder; ///< RefStruct reference
 
-    uint8_t      *bitstream;
+    const uint8_t *bitstream;
     int           bitstream_len;
     unsigned int  bitstream_allocated;
+    uint8_t      *bitstream_internal;
 
     unsigned     *slice_offsets;
     int           nb_slices;
@@ -68,6 +76,7 @@ typedef struct NVDECContext {
 int ff_nvdec_decode_init(AVCodecContext *avctx);
 int ff_nvdec_decode_uninit(AVCodecContext *avctx);
 int ff_nvdec_start_frame(AVCodecContext *avctx, AVFrame *frame);
+int ff_nvdec_start_frame_sep_ref(AVCodecContext *avctx, AVFrame *frame, int has_sep_ref);
 int ff_nvdec_end_frame(AVCodecContext *avctx);
 int ff_nvdec_simple_end_frame(AVCodecContext *avctx);
 int ff_nvdec_simple_decode_slice(AVCodecContext *avctx, const uint8_t *buffer,
